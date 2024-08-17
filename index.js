@@ -54,6 +54,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Create database and collection
+        const productsCollection = client.db("productsDB").collection("productsData");
 
         //========> Token related API <==========
         app.post('/jwt', async (req, res) => {
