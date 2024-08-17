@@ -53,6 +53,30 @@ const client = new MongoClient(uri, {
 })
 async function run() {
     try {
+        // Create database and collection
+
+        //========> Token related API <==========
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            // console.log('dynamic token of', user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '7d' });
+            // res.send(token); // SEND TOKEN FRONT IN BY AXIOS ER DATA ER VITORE
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+            }).send({ success: true });
+        })
+        // Token clear after user logOut
+        app.get('/logout', async (req, res) => {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+                maxAge: 0,
+            }).send({ success: true });
+        })
+
         
 
         // Send a ping to confirm a successful connection
