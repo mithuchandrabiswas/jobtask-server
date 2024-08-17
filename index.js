@@ -78,7 +78,41 @@ async function run() {
             }).send({ success: true });
         })
 
-        
+        app.get('/products', async (req, res) => {
+            try {
+                const searchQuery = req.query.search;
+                const filterQuery = req.query.filter;
+                const sortQuery = req.query.sort;
+
+                // Initialize the query object
+                let query = {};
+
+                // Add filter condition
+                if (filterQuery) {
+                    query.category = filterQuery;
+                }
+
+                // Add search condition
+                if (searchQuery) {
+                    query.post_title = { $regex: searchQuery, $options: 'i' };
+                }
+
+                // Initialize sorting options
+                let sortOptions = {};
+                if (sortQuery) {
+                    sortOptions.deadline = sortQuery === 'asc' ? 1 : -1;
+                }
+
+                // Fetch results from the collection with combined query and sort options
+                const result = await productsCollection.find(query).sort(sortOptions).toArray();
+
+                // Send the result as the response
+                res.send(result);
+            } catch (error) {
+                // Handle errors and send a response with status code 500
+                res.status(500).send({ error: 'An error occurred while fetching volunteers data' });
+            }
+        });
 
         // Send a ping to confirm a successful connection
         // await client.db('admin').command({ ping: 1 })
