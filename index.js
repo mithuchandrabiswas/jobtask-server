@@ -80,9 +80,7 @@ async function run() {
 
         app.get('/products', async (req, res) => {
             try {
-                const searchQuery = req.query.search;
-                const filterQuery = req.query.filter;
-                const sortQuery = req.query.sort;
+                
 
                 // Initialize the query object
                 let query = {};
