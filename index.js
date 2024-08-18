@@ -10,8 +10,9 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // Config
 const corsOptions = {
     origin: [
-        'http://localhost:5173',
-        'http://localhost:5000',
+        // 'http://localhost:5173',
+        // 'http://localhost:5000',
+        'https://job-task-383b4.web.app'
     ],
     credentials: true,
     optionSuccessStatus: 200,
@@ -41,7 +42,7 @@ const verifyToken = (req, res, next) => {
     }
 }
 
-const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.2bu9h7l.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";`;
+const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.2bu9h7l.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -78,39 +79,84 @@ async function run() {
             }).send({ success: true });
         })
 
+        // app.get('/products', async (req, res) => {
+        //     try {
+        //         const searchQuery = req.query.search;
+        //         const filterQuery = req.query.filter;
+        //         const sortQuery = req.query.sort;
+
+        //         // Initialize the query object
+        //         let query = {};
+
+        //         // Add filter condition
+        //         if (filterQuery) {
+        //             query.category = filterQuery;
+        //         }
+
+        //         // Add search condition
+        //         if (searchQuery) {
+        //             query.post_title = { $regex: searchQuery, $options: 'i' };
+        //         }
+
+        //         // Initialize sorting options
+        //         let sortOptions = {};
+        //         if (sortQuery) {
+        //             sortOptions.deadline = sortQuery === 'asc' ? 1 : -1;
+        //         }
+
+        //         // Fetch results from the collection with combined query and sort options
+        //         const result = await productsCollection.find(query).sort(sortOptions).toArray();
+
+        //         // Send the result as the response
+        //         res.send(result);
+        //     } catch (error) {
+        //         // Handle errors and send a response with status code 500
+        //         res.status(500).send({ error: 'An error occurred while fetching volunteers data' });
+        //     }
+        // });
+
+        // Products endpoint with pagination, search, filter, and sort
         app.get('/products', async (req, res) => {
             try {
-                const searchQuery = req.query.search;
-                const filterQuery = req.query.filter;
-                const sortQuery = req.query.sort;
+                const { search, filter, sort, page = 1, limit = 10 } = req.query;
 
                 // Initialize the query object
                 let query = {};
 
                 // Add filter condition
-                if (filterQuery) {
-                    query.category = filterQuery;
+                if (filter) {
+                    query.category = filter;
                 }
 
                 // Add search condition
-                if (searchQuery) {
-                    query.post_title = { $regex: searchQuery, $options: 'i' };
+                if (search) {
+                    query.product_name = { $regex: search, $options: 'i' };
                 }
 
                 // Initialize sorting options
                 let sortOptions = {};
-                if (sortQuery) {
-                    sortOptions.deadline = sortQuery === 'asc' ? 1 : -1;
+                if (sort === 'price-asc') {
+                    sortOptions.price = 1;
+                } else if (sort === 'price-desc') {
+                    sortOptions.price = -1;
+                } else if (sort === 'date-asc') {
+                    sortOptions.creation_date = 1;
+                } else if (sort === 'date-desc') {
+                    sortOptions.creation_date = -1;
                 }
 
-                // Fetch results from the collection with combined query and sort options
-                const result = await productsCollection.find(query).sort(sortOptions).toArray();
+                // Pagination
+                const skip = (page - 1) * limit;
+                const result = await productsCollection.find(query).sort(sortOptions).skip(skip).limit(parseInt(limit)).toArray();
+                const totalProducts = await productsCollection.countDocuments(query);
 
-                // Send the result as the response
-                res.send(result);
+                res.send({
+                    data: result,
+                    totalPages: Math.ceil(totalProducts / limit),
+                    currentPage: parseInt(page),
+                });
             } catch (error) {
-                // Handle errors and send a response with status code 500
-                res.status(500).send({ error: 'An error occurred while fetching volunteers data' });
+                res.status(500).send({ error: 'An error occurred while fetching products' });
             }
         });
 
